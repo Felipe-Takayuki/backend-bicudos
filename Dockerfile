@@ -9,6 +9,8 @@ RUN npm ci
 
 COPY . .
 
+ENV DATABASE_URL="postgresql://postgres:postgres@localhost:5432/monitoramento_pragas?schema=public"
+
 RUN npx prisma generate
 RUN npm run build
 
@@ -19,7 +21,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
