@@ -18,6 +18,29 @@ describe('HTTP Endpoints & Security Headers', () => {
     expect(res.body.documentation).toBe('/api/v1/docs');
   });
 
+  it('GET / with Accept: text/html should redirect to /api/v1/docs/', async () => {
+    const res = await request(app).get('/').set('Accept', 'text/html');
+    expect(res.status).toBe(302);
+    expect(res.headers.location).toBe('/api/v1/docs/');
+  });
+
+  it('GET /docs and /swagger should redirect to /api/v1/docs/', async () => {
+    const resDocs = await request(app).get('/docs');
+    expect(resDocs.status).toBe(302);
+    expect(resDocs.headers.location).toBe('/api/v1/docs/');
+
+    const resSwagger = await request(app).get('/swagger');
+    expect(resSwagger.status).toBe(302);
+    expect(resSwagger.headers.location).toBe('/api/v1/docs/');
+  });
+
+  it('GET /api/v1/docs/swagger.json should return OpenAPI schema', async () => {
+    const res = await request(app).get('/api/v1/docs/swagger.json');
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('openapi');
+    expect(res.body.info.title).toContain('Monitoramento de Pragas');
+  });
+
   it('POST /api/v1/auth/register with empty body should return 400 with validation errors', async () => {
     const res = await request(app)
       .post('/api/v1/auth/register')

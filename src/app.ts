@@ -47,8 +47,28 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // 5. Rate Limiter Global para mitigar DoS
 app.use('/api', globalRateLimiter);
 
-// 6. Documentação Swagger UI Interativa
-app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+// Redirecionamentos amigáveis para a documentação Swagger
+app.get(['/docs', '/swagger', '/api-docs'], (_req: Request, res: Response) => {
+  res.redirect('/api/v1/docs/');
+});
+
+// Endpoint com a especificação OpenAPI pura em JSON
+app.get(['/api/v1/docs/swagger.json', '/swagger.json'], (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerDocument);
+});
+
+// 6. Documentação Swagger UI Interativa (com assets estáveis via CDN para funcionar atrás de proxies/túneis)
+const swaggerUiOptions: swaggerUi.SwaggerUiOptions = {
+  customCssUrl: 'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui.min.css',
+  customJs: [
+    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-bundle.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.11.0/swagger-ui-standalone-preset.min.js',
+  ],
+  customSiteTitle: 'Monitoramento de Pragas - Swagger UI',
+};
+
+app.use('/api/v1/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerUiOptions));
 
 // 7. Healthcheck com verificação de conectividade do banco
 app.get('/health', async (_req: Request, res: Response) => {
@@ -76,7 +96,10 @@ app.use('/api/v1/pest-records', pestRecordsRouter);
 app.use('/api/v1/statistics', statisticsRouter);
 
 // 9. Rota padrão de redirecionamento ou boas-vindas
-app.get('/', (_req: Request, res: Response) => {
+app.get('/', (req: Request, res: Response) => {
+  if (req.accepts('html') && !req.accepts('json')) {
+    return res.redirect('/api/v1/docs/');
+  }
   res.json({
     name: 'Monitoramento de Pragas API',
     version: '1.0.0',
