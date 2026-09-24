@@ -12,6 +12,10 @@
     {
       "url": "/",
       "description": "Servidor Atual (Relativo)"
+    },
+    {
+      "url": "https://bicudos.fdevs.io",
+      "description": "Produção (Cloudflare Tunnel - bicudos.fdevs.io)"
     }
   ],
   "components": {

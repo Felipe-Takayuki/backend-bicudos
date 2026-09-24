@@ -120,7 +120,8 @@ O servidor estará disponível em: `http://localhost:3000`
 
 Com o servidor rodando, acesse a documentação interativa completa com testes de requisição no navegador:
 
-👉 **[http://localhost:3000/api/v1/docs](http://localhost:3000/api/v1/docs)**
+- **Produção:** 👉 **[https://bicudos.fdevs.io/docs](https://bicudos.fdevs.io/docs)**
+- **Local:** 👉 **[http://localhost:3000/api/v1/docs](http://localhost:3000/api/v1/docs)**
 
 ---
 

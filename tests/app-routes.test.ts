@@ -22,10 +22,10 @@ describe('HTTP Endpoints & Security Headers', () => {
     const res = await request(app)
       .get('/health')
       .set('x-forwarded-proto', 'http')
-      .set('host', 'api.bicudos.fdevs.io');
+      .set('host', 'bicudos.fdevs.io');
 
     expect(res.status).toBe(301);
-    expect(res.headers.location).toBe('https://api.bicudos.fdevs.io/health');
+    expect(res.headers.location).toBe('https://bicudos.fdevs.io/health');
   });
 
   it('GET / with Accept: text/html should redirect to /api/v1/docs/', async () => {
