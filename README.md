@@ -1,4 +1,4 @@
-# 🌾 API de Monitoramento de Pragas & Integração QGIS
+# 🌾 API de Monitoramento de Pragas 
 
 API RESTful de alta performance e segurança desenvolvida em **Node.js** com **TypeScript** e **PostgreSQL com extensão PostGIS**, projetada especificamente para suportar o ecossistema do aplicativo de **Monitoramento de Pragas com Integração QGIS**.
 
