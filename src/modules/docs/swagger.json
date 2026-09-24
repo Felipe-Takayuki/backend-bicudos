@@ -1,0 +1,309 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "API de Monitoramento de Pragas & Integração QGIS",
+    "description": "API RESTful profissional desenvolvida em Node.js e TypeScript com PostgreSQL/PostGIS para georreferenciamento de pragas agrícolas, autenticação JWT, sincronização offline-first e exportação direta para SIGs (QGIS, ArcGIS, Google Earth).",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Suporte Técnico Agronômico"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Servidor de Desenvolvimento Local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Insira o token JWT retornado no login. Exemplo: Bearer <seu_token>"
+      }
+    },
+    "schemas": {
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean", "example": false },
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string", "example": "VALIDATION_ERROR" },
+              "message": { "type": "string", "example": "Erro nos dados enviados" },
+              "details": { "type": "object", "nullable": true }
+            }
+          }
+        }
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["name", "email", "password"],
+        "properties": {
+          "name": { "type": "string", "example": "Dra. Renata Agrônoma" },
+          "email": { "type": "string", "format": "email", "example": "renata@fazenda.com.br" },
+          "password": { "type": "string", "format": "password", "example": "SenhaForte123" },
+          "role": { "type": "string", "enum": ["ADMIN", "AGRONOMIST", "OPERATOR"], "default": "OPERATOR" }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "properties": {
+          "email": { "type": "string", "format": "email", "example": "renata@fazenda.com.br" },
+          "password": { "type": "string", "format": "password", "example": "SenhaForte123" }
+        }
+      },
+      "PestRecord": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "example": "9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d" },
+          "pestName": { "type": "string", "example": "Spodoptera frugiperda (Lagarta-do-cartucho)" },
+          "quantity": { "type": "integer", "example": 15 },
+          "crop": { "type": "string", "example": "Milho Safrinha" },
+          "plot": { "type": "string", "example": "Talhão 04 - Pivô Central" },
+          "growthStage": { "type": "string", "example": "V4 - 4 folhas abertas" },
+          "notes": { "type": "string", "example": "Folhas raspadas com presença de excrementos" },
+          "latitude": { "type": "number", "format": "double", "example": -15.7801 },
+          "longitude": { "type": "number", "format": "double", "example": -47.9292 },
+          "altitude": { "type": "number", "format": "double", "nullable": true, "example": 1105.4 },
+          "accuracy": { "type": "number", "format": "double", "nullable": true, "example": 3.2 },
+          "imagePath": { "type": "string", "nullable": true, "example": "https://s3.amazonaws.com/pragas/foto1.jpg" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "updatedAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "CreatePestRecordRequest": {
+        "type": "object",
+        "required": ["pestName", "quantity", "latitude", "longitude"],
+        "properties": {
+          "id": { "type": "string", "format": "uuid", "description": "Opcional: ID gerado offline no app" },
+          "pestName": { "type": "string", "example": "Spodoptera frugiperda" },
+          "quantity": { "type": "integer", "minimum": 1, "example": 8 },
+          "crop": { "type": "string", "example": "Soja Intacta" },
+          "plot": { "type": "string", "example": "Talhão 02" },
+          "growthStage": { "type": "string", "example": "R1 - Início da floração" },
+          "notes": { "type": "string", "example": "Infestação em reboleira na bordadura" },
+          "latitude": { "type": "number", "minimum": -90, "maximum": 90, "example": -16.3285 },
+          "longitude": { "type": "number", "minimum": -180, "maximum": 180, "example": -48.9534 },
+          "altitude": { "type": "number", "nullable": true, "example": 820.0 },
+          "accuracy": { "type": "number", "nullable": true, "example": 4.5 },
+          "imagePath": { "type": "string", "nullable": true },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "SyncRequest": {
+        "type": "object",
+        "required": ["records"],
+        "properties": {
+          "records": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/CreatePestRecordRequest" }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Healthcheck do serviço",
+        "description": "Verifica se a API e o banco de dados estão operacionais.",
+        "responses": {
+          "200": { "description": "Serviço saudável" }
+        }
+      }
+    },
+    "/api/v1/auth/register": {
+      "post": {
+        "summary": "Registrar novo usuário",
+        "tags": ["Autenticação"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Usuário registrado com sucesso" },
+          "400": { "description": "Dados inválidos" },
+          "409": { "description": "E-mail já cadastrado" }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "Autenticar usuário e obter tokens JWT",
+        "tags": ["Autenticação"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login com sucesso" },
+          "401": { "description": "Credenciais inválidas" }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "summary": "Obter perfil do usuário autenticado",
+        "tags": ["Autenticação"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Dados do usuário" },
+          "401": { "description": "Não autenticado" }
+        }
+      }
+    },
+    "/api/v1/pest-records": {
+      "get": {
+        "summary": "Listar registros de pragas com filtros e paginação",
+        "tags": ["Registros de Pragas"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } },
+          { "name": "pestName", "in": "query", "schema": { "type": "string" } },
+          { "name": "crop", "in": "query", "schema": { "type": "string" } },
+          { "name": "plot", "in": "query", "schema": { "type": "string" } },
+          { "name": "minQuantity", "in": "query", "schema": { "type": "integer" } },
+          { "name": "startDate", "in": "query", "schema": { "type": "string", "format": "date" } },
+          { "name": "endDate", "in": "query", "schema": { "type": "string", "format": "date" } }
+        ],
+        "responses": {
+          "200": { "description": "Lista paginada de registros" }
+        }
+      },
+      "post": {
+        "summary": "Criar novo ponto de monitoramento",
+        "tags": ["Registros de Pragas"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreatePestRecordRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Registro criado com sucesso" },
+          "400": { "description": "Erro de validação nos dados ou coordenadas" }
+        }
+      }
+    },
+    "/api/v1/pest-records/sync": {
+      "post": {
+        "summary": "Sincronização em lote Offline-First",
+        "description": "Recebe todos os registros coletados no campo pelo aplicativo móvel durante período offline e realiza o upsert com segurança.",
+        "tags": ["Sincronização Offline-First"],
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SyncRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Registros sincronizados com sucesso" }
+        }
+      }
+    },
+    "/api/v1/pest-records/nearby": {
+      "get": {
+        "summary": "Busca geoespacial de pragas por proximidade (Raio em metros)",
+        "tags": ["Geoespacial & SIG"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "latitude", "in": "query", "required": true, "schema": { "type": "number" } },
+          { "name": "longitude", "in": "query", "required": true, "schema": { "type": "number" } },
+          { "name": "radius", "in": "query", "schema": { "type": "number", "default": 5000 }, "description": "Raio de busca em metros" },
+          { "name": "pestName", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Registros ordenados por distância euclidiana/esférica" }
+        }
+      }
+    },
+    "/api/v1/pest-records/export/geojson": {
+      "get": {
+        "summary": "Exportar camada GeoJSON RFC 7946 para QGIS",
+        "description": "Gera camada espacial em formato padrão GeoJSON pronta para arrastar para dentro do QGIS ou ArcGIS.",
+        "tags": ["Geoespacial & SIG"],
+        "responses": {
+          "200": {
+            "description": "Camada GeoJSON FeatureCollection",
+            "content": {
+              "application/geo+json": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pest-records/export/csv": {
+      "get": {
+        "summary": "Exportar CSV com geometria WKT POINT",
+        "tags": ["Geoespacial & SIG"],
+        "responses": {
+          "200": {
+            "description": "Arquivo CSV com colunas de coordenadas e wkt_geom",
+            "content": {
+              "text/csv": {}
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pest-records/{id}": {
+      "get": {
+        "summary": "Buscar registro por ID",
+        "tags": ["Registros de Pragas"],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "description": "Registro encontrado" },
+          "404": { "description": "Registro não encontrado" }
+        }
+      },
+      "put": {
+        "summary": "Atualizar registro",
+        "tags": ["Registros de Pragas"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "description": "Registro atualizado" }
+        }
+      },
+      "delete": {
+        "summary": "Excluir registro",
+        "tags": ["Registros de Pragas"],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string", "format": "uuid" } }],
+        "responses": {
+          "200": { "description": "Registro excluído" }
+        }
+      }
+    },
+    "/api/v1/statistics/overview": {
+      "get": {
+        "summary": "Estatísticas agronômicas e indicadores de infestação",
+        "description": "Retorna o total de pragas amostradas, média por ponto, praga predominante e ponto de infestação máxima.",
+        "tags": ["Estatísticas & Dashboards"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Indicadores agregados" }
+        }
+      }
+    }
+  }
+}
