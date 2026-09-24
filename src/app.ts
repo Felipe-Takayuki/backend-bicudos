@@ -18,11 +18,21 @@ const app: Application = express();
 // Suporte a Proxy Reverso (Cloudflare Tunnel, Nginx, Ngrok, Traefik)
 app.set('trust proxy', 1);
 
+// Redirecionamento automático para HTTPS quando acessado via HTTP através de proxy
+app.use((req: Request, res: Response, next: NextFunction) => {
+  if (req.headers['x-forwarded-proto'] === 'http') {
+    return res.redirect(301, `https://${req.headers.host}${req.url}`);
+  }
+  next();
+});
+
 // 1. Segurança com Headers HTTP (Helmet)
 // contentSecurityPolicy desativado para permitir assets do Swagger UI
 app.use(
   helmet({
     contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
 

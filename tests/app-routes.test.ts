@@ -18,6 +18,16 @@ describe('HTTP Endpoints & Security Headers', () => {
     expect(res.body.documentation).toBe('/api/v1/docs');
   });
 
+  it('should redirect http to https when behind a proxy with x-forwarded-proto: http', async () => {
+    const res = await request(app)
+      .get('/health')
+      .set('x-forwarded-proto', 'http')
+      .set('host', 'api.bicudos.fdevs.io');
+
+    expect(res.status).toBe(301);
+    expect(res.headers.location).toBe('https://api.bicudos.fdevs.io/health');
+  });
+
   it('GET / with Accept: text/html should redirect to /api/v1/docs/', async () => {
     const res = await request(app).get('/').set('Accept', 'text/html');
     expect(res.status).toBe(302);
