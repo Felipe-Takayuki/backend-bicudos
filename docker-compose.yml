@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Banco de Dados Geoespacial: PostgreSQL 16 com extensão PostGIS 3.4
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: monitoramento_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: monitoramento_pragas
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d monitoramento_pragas"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # API Node.js com TypeScript
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: monitoramento_api
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: "postgresql://postgres:postgrespassword@postgres:5432/monitoramento_pragas?schema=public"
+      JWT_SECRET: "sua-chave-secreta-jwt-em-producao-substitua-esta-string"
+      JWT_EXPIRES_IN: "7d"
+      REFRESH_TOKEN_EXPIRES_DAYS: "30"
+      CORS_ORIGIN: "*"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
+    driver: local

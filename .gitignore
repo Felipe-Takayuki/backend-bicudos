@@ -1,0 +1,13 @@
+node_modules
+dist
+coverage
+*.log
+npm-debug.log*
+
+# Keep environment variables out of version control
+.env
+.env*.local
+
+/generated/prisma
+.ai-memory.toml
+.DS_Store
