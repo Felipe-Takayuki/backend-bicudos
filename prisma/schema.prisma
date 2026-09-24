@@ -42,7 +42,7 @@ model RefreshToken {
 
 model PestRecord {
   id          String   @id @default(uuid())
-  pestName    String   @map("pest_name")
+  pestName    String   @default("Bicudo") @map("pest_name")
   quantity    Int      @default(1)
   crop        String?  @default("")
   plot        String?  @default("")

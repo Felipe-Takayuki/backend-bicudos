@@ -76,6 +76,33 @@ describe('Zod Validation Schemas & Security Rules', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should default pestName to "Bicudo" when omitted in record', () => {
+      const recordWithoutPest = {
+        quantity: 3,
+        latitude: -15.7801,
+        longitude: -47.9292,
+      };
+      const result = createPestRecordSchema.safeParse(recordWithoutPest);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.pestName).toBe('Bicudo');
+      }
+    });
+
+    it('should default pestName to "Bicudo" when empty string is provided', () => {
+      const recordWithEmptyPest = {
+        pestName: '',
+        quantity: 3,
+        latitude: -15.7801,
+        longitude: -47.9292,
+      };
+      const result = createPestRecordSchema.safeParse(recordWithEmptyPest);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.pestName).toBe('Bicudo');
+      }
+    });
+
     it('should reject latitude outside [-90, 90]', () => {
       const invalidLat = {
         pestName: 'Helicoverpa armigera',

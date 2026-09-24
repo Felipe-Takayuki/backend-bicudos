@@ -2,7 +2,12 @@ import { z } from 'zod';
 
 export const createPestRecordSchema = z.object({
   id: z.string().uuid('ID deve ser um UUID válido').optional(),
-  pestName: z.string().trim().min(2, 'Nome da praga deve ter no mínimo 2 caracteres').max(120),
+  pestName: z
+    .string()
+    .trim()
+    .transform((val) => (!val ? 'Bicudo' : val))
+    .pipe(z.string().min(2, 'Nome da praga deve ter no mínimo 2 caracteres').max(120))
+    .default('Bicudo'),
   quantity: z.coerce.number().int().min(1, 'A quantidade deve ser de no mínimo 1 indivíduo'),
   crop: z.string().trim().max(100).optional().default(''),
   plot: z.string().trim().max(100).optional().default(''),

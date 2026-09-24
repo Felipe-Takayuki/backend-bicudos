@@ -77,10 +77,10 @@
       },
       "CreatePestRecordRequest": {
         "type": "object",
-        "required": ["pestName", "quantity", "latitude", "longitude"],
+        "required": ["quantity", "latitude", "longitude"],
         "properties": {
           "id": { "type": "string", "format": "uuid", "description": "Opcional: ID gerado offline no app" },
-          "pestName": { "type": "string", "example": "Spodoptera frugiperda" },
+          "pestName": { "type": "string", "example": "Bicudo", "default": "Bicudo", "description": "Nome da praga identificada (padrão: Bicudo)" },
           "quantity": { "type": "integer", "minimum": 1, "example": 8 },
           "crop": { "type": "string", "example": "Soja Intacta" },
           "plot": { "type": "string", "example": "Talhão 02" },

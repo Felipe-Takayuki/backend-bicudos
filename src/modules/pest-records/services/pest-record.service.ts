@@ -21,7 +21,7 @@ export class PestRecordService {
 
     return this.repository.create({
       id,
-      pestName: input.pestName,
+      pestName: input.pestName || 'Bicudo',
       quantity: input.quantity,
       crop: input.crop || '',
       plot: input.plot || '',
@@ -88,7 +88,7 @@ export class PestRecordService {
   async sync(input: SyncPestRecordsInput, userId?: string): Promise<{ syncedCount: number; message: string }> {
     const formattedRecords = input.records.map((rec) => ({
       id: rec.id || crypto.randomUUID(),
-      pestName: rec.pestName,
+      pestName: rec.pestName || 'Bicudo',
       quantity: rec.quantity,
       crop: rec.crop || '',
       plot: rec.plot || '',
