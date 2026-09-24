@@ -2,24 +2,25 @@ version: '3.8'
 
 services:
   # Banco de Dados Geoespacial: PostgreSQL 16 com extensão PostGIS 3.4
+  # Rede isolada sem publicação de portas externas (sem export para o host)
   postgres:
     image: postgis/postgis:16-3.4
     container_name: monitoramento_postgres
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgrespassword
-      POSTGRES_DB: monitoramento_pragas
-    ports:
-      - "127.0.0.1:5432:5432"
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgrespassword}
+      POSTGRES_DB: ${POSTGRES_DB:-monitoramento_pragas}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d monitoramento_pragas"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-monitoramento_pragas}"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - internal_network
 
   # API Node.js com TypeScript
   api:
@@ -28,19 +29,27 @@ services:
       dockerfile: Dockerfile
     container_name: monitoramento_api
     restart: always
+    env_file:
+      - .env
     environment:
-      NODE_ENV: production
-      PORT: 3000
-      DATABASE_URL: "postgresql://postgres:postgrespassword@postgres:5432/monitoramento_pragas?schema=public"
-      JWT_SECRET: "sua-chave-secreta-jwt-em-producao-substitua-esta-string"
-      JWT_EXPIRES_IN: "7d"
-      REFRESH_TOKEN_EXPIRES_DAYS: "30"
-      CORS_ORIGIN: "*"
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: ${PORT:-3000}
+      DATABASE_URL: "postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgrespassword}@postgres:5432/${POSTGRES_DB:-monitoramento_pragas}?schema=public"
+      JWT_SECRET: ${JWT_SECRET:-super-secret-jwt-key-pest-monitoring-change-in-production-min-32-chars}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      REFRESH_TOKEN_EXPIRES_DAYS: ${REFRESH_TOKEN_EXPIRES_DAYS:-30}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
     ports:
-      - "3000:3000"
+      - "${PORT:-3000}:3000"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - internal_network
+
+networks:
+  internal_network:
+    driver: bridge
 
 volumes:
   pgdata:
