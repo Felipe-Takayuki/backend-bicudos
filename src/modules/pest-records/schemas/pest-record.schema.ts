@@ -1,7 +1,13 @@
 import { z } from 'zod';
 
 export const createPestRecordSchema = z.object({
-  id: z.string().uuid('ID deve ser um UUID válido').optional(),
+  id: z
+    .string()
+    .uuid('ID deve ser um UUID válido')
+    .optional()
+    .nullable()
+    .or(z.literal(''))
+    .transform((val) => (val && val.trim() !== '' ? val : undefined)),
   pestName: z
     .string()
     .trim()
@@ -16,9 +22,21 @@ export const createPestRecordSchema = z.object({
   latitude: z.coerce.number().min(-90, 'Latitude deve estar entre -90 e 90').max(90, 'Latitude deve estar entre -90 e 90'),
   longitude: z.coerce.number().min(-180, 'Longitude deve estar entre -180 e 180').max(180, 'Longitude deve estar entre -180 e 180'),
   altitude: z.coerce.number().optional().nullable(),
-  accuracy: z.coerce.number().min(0, 'Precisão GPS não pode ser negativa').optional().nullable(),
+  accuracy: z.coerce
+    .number()
+    .optional()
+    .nullable()
+    .transform((val) => (val != null && val >= 0 ? val : null)),
   imagePath: z.string().trim().optional().nullable(),
-  createdAt: z.string().datetime({ offset: true }).optional().or(z.date().optional()),
+  createdAt: z
+    .union([
+      z.string().datetime({ offset: true }),
+      z.string().datetime(),
+      z.string().refine((val) => !isNaN(Date.parse(val)), { message: 'Data inválida' }),
+      z.date(),
+    ])
+    .optional()
+    .nullable(),
 });
 
 export const updatePestRecordSchema = z.object({
