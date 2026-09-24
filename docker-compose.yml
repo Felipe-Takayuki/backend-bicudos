@@ -11,7 +11,7 @@ services:
       POSTGRES_PASSWORD: postgrespassword
       POSTGRES_DB: monitoramento_pragas
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./docker/init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql

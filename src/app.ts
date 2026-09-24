@@ -15,8 +15,16 @@ import swaggerDocument from './modules/docs/swagger.json';
 
 const app: Application = express();
 
+// Suporte a Proxy Reverso (Cloudflare Tunnel, Nginx, Ngrok, Traefik)
+app.set('trust proxy', 1);
+
 // 1. Segurança com Headers HTTP (Helmet)
-app.use(helmet());
+// contentSecurityPolicy desativado para permitir assets do Swagger UI
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+  })
+);
 
 // 2. Cross-Origin Resource Sharing (CORS)
 app.use(
