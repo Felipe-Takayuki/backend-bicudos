@@ -1,0 +1,68 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  AGRONOMIST
+  OPERATOR
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  password      String
+  role          Role           @default(OPERATOR)
+  isActive      Boolean        @default(true) @map("is_active")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  pestRecords   PestRecord[]
+  refreshTokens RefreshToken[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("refresh_tokens")
+}
+
+model PestRecord {
+  id          String   @id @default(uuid())
+  pestName    String   @map("pest_name")
+  quantity    Int      @default(1)
+  crop        String?  @default("")
+  plot        String?  @default("")
+  growthStage String?  @default("") @map("growth_stage")
+  notes       String?  @default("")
+  latitude    Float
+  longitude   Float
+  altitude    Float?
+  accuracy    Float?
+  imagePath   String?  @map("image_path")
+  userId      String?  @map("user_id")
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([pestName])
+  @@index([createdAt])
+  @@index([plot])
+  @@index([crop])
+  @@index([userId])
+  @@index([latitude, longitude])
+  @@map("pest_records")
+}
